@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Operadora — DepiMóvil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2335;--border:#262d42;
+  --accent:#d4a96a;--accent2:#e8c48a;--accent-dim:rgba(212,169,106,0.12);
+  --rose:#c76b8a;--green:#52c48a;--red:#e05c6b;--blue:#5c8fe0;
+  --yellow:#e0c05c;--purple:#9b7fe8;
+  --text:#e8ecf4;--text2:#8892aa;--text3:#555e75;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  background:radial-gradient(ellipse at 30% 20%,rgba(212,169,106,0.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 80%,rgba(199,107,138,0.05) 0%,transparent 50%),var(--bg);}
+a{color:var(--accent);text-decoration:none}
+
+.container{max-width:640px;margin:0 auto;padding:24px 16px}
+
+/* Header */
+.portal-header{text-align:center;padding:40px 0 32px}
+.logo-mark{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),var(--rose));
+  border-radius:14px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:16px;box-shadow:0 8px 24px rgba(212,169,106,0.2)}
+.portal-header h1{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:6px}
+.portal-header p{font-size:13px;color:var(--text2)}
+.op-name{color:var(--accent);font-weight:600}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:20px;transition:border-color .2s}
+.card h3{font-size:16px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.card .desc{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5}
+
+/* Status badges */
+.status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;
+  font-size:12px;font-weight:600;letter-spacing:.3px}
+.status-ok{background:rgba(82,196,138,0.12);color:var(--green)}
+.status-pending{background:rgba(224,192,92,0.12);color:var(--yellow)}
+.status-missing{background:rgba(224,92,107,0.1);color:var(--red)}
+
+/* Upload area */
+.upload-area{border:2px dashed var(--border);border-radius:var(--radius);padding:32px 20px;
+  text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-area:hover{border-color:var(--accent);background:var(--accent-dim)}
+.upload-area.dragging{border-color:var(--accent);background:rgba(212,169,106,0.08)}
+.upload-area .icon{font-size:36px;margin-bottom:10px}
+.upload-area p{font-size:13px;color:var(--text2)}
+.upload-area small{font-size:11px;color:var(--text3);display:block;margin-top:6px}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.preview-img{max-width:200px;max-height:150px;border-radius:8px;margin-top:12px;border:1px solid var(--border)}
+
+/* Buttons */
+.btn{padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
+  border:none;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#c89040);color:#1a1100;
+  box-shadow:0 4px 16px rgba(212,169,106,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,169,106,0.4)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text)}
+.btn-danger{background:rgba(224,92,107,0.12);color:var(--red);border:1px solid rgba(224,92,107,0.2)}
+
+/* Contract */
+.contract-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:20px;max-height:300px;overflow-y:auto;font-size:13px;line-height:1.7;color:var(--text2);
+  margin-bottom:16px}
+.contract-box h4{color:var(--text);margin-bottom:8px;font-size:14px}
+.contract-box p{margin-bottom:10px}
+
+.contract-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.contract-item .ci-left{flex:1}
+.contract-item .ci-name{font-size:14px;font-weight:600}
+.contract-item .ci-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+.check-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;cursor:pointer}
+.check-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.check-row label{font-size:13px;color:var(--text2);cursor:pointer}
+
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:var(--text3)}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;
+  font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.4);
+  transition:transform .3s cubic-bezier(.22,1,.36,1);z-index:100;display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Error */
+.error-screen{text-align:center;padding:80px 20px}
+.error-screen .icon{font-size:48px;margin-bottom:16px}
+.error-screen h2{font-size:18px;margin-bottom:8px;color:var(--text)}
+.error-screen p{font-size:14px;color:var(--text2)}
+
+/* Success check */
+.success-icon{width:48px;height:48px;background:rgba(82,196,138,0.12);border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Loading -->
+  <div id="loadingScreen" class="loading">
+    <div class="spinner"></div>
+    <p>Cargando portal...</p>
+  </div>
+
+  <!-- Error -->
+  <div id="errorScreen" class="error-screen" style="display:none">
+    <div class="icon">🔒</div>
+    <h2>Enlace inválido</h2>
+    <p>Este enlace no es válido o ya expiró. Contactá a DepiMóvil para obtener uno nuevo.</p>
+  </div>
+
+  <!-- Portal Content -->
+  <div id="portalContent" style="display:none">
+    <div class="portal-header">
+      <div class="logo-mark">💎</div>
+      <h1>Portal DepiMóvil</h1>
+      <p>Hola, <span class="op-name" id="opName"></span></p>
+    </div>
+
+    <!-- CÉDULA -->
+    <div class="card" id="cedulaCard">
+      <h3>🪪 Cédula de Identidad <span id="cedulaStatus"></span></h3>
+      <p class="desc">Subí una foto clara de tu cédula de identidad (frente). Solo es necesario hacerlo una vez.</p>
+      <div id="cedulaBody"></div>
+    </div>
+
+    <!-- CONTRATOS -->
+    <div class="card" id="contratosCard">
+      <h3>📋 Contratos de Alquiler</h3>
+      <p class="desc">Leé y firmá el contrato de alquiler para cada máquina que tengas reservada. Es por única vez por máquina.</p>
+      <div id="contratosBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+// ══════════════════════════════════
+// CONFIG
+// ══════════════════════════════════
+const API = '/api/portal';
+const TOKEN = new URLSearchParams(window.location.search).get('token');
+let DATA = null;
+
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+async function init() {
+  if (!TOKEN) { showError(); return; }
+  try {
+    const r = await fetch(`${API}/${TOKEN}`);
+    if (!r.ok) throw new Error('Token inválido');
+    DATA = await r.json();
+    render();
+  } catch (e) {
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('errorScreen').style.display = '';
+}
+
+function render() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('portalContent').style.display = '';
+  document.getElementById('opName').textContent = `${DATA.operadora.nombre} ${DATA.operadora.apellido}`;
+  renderCedula();
+  renderContratos();
+}
+
+// ══════════════════════════════════
+// CÉDULA
+// ══════════════════════════════════
+function renderCedula() {
+  const statusEl = document.getElementById('cedulaStatus');
+  const bodyEl = document.getElementById('cedulaBody');
+
+  if (DATA.cedula) {
+    statusEl.innerHTML = '<span class="status status-ok">✓ Subida</span>';
+    bodyEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="success-icon">✅</div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Cédula cargada correctamente</div>
+          <div style="font-size:12px;color:var(--text3)">Subida el ${new Date(DATA.cedula.created_at).toLocaleDateString('es-UY')}</div>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-secondary" onclick="resetCedula()">🔄 Reemplazar cédula</button>
+      </div>`;
+  } else {
+    statusEl.innerHTML = '<span class="status status-missing">Pendiente</span>';
+    bodyEl.innerHTML = `
+      <div class="upload-area" id="cedulaUpload" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)">
+        <div class="icon">📸</div>
+        <p>Arrastrá o tocá para subir la foto de tu cédula</p>
+        <small>JPG, PNG, PDF o WebP · Máximo 10 MB</small>
+        <input type="file" accept=".jpg,.jpeg,.png,.pdf,.webp" onchange="uploadCedula(this.files[0])"/>
+      </div>
+      <div id="cedulaPreview"></div>
+      <div id="cedulaActions" style="display:none;margin-top:14px;text-align:center">
+        <button class="btn btn-primary" id="btnConfirmCedula" onclick="confirmCedula()">📤 Confirmar y Enviar</button>
+      </div>`;
+  }
+}
+
+let _pendingFile = null;
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.target.closest('.upload-area').classList.remove('dragging');
+  const file = e.dataTransfer.files[0];
+  if (file) previewCedula(file);
+}
+
+function previewCedula(file) {
+  _pendingFile = file;
+  const preview = document.getElementById('cedulaPreview');
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.innerHTML = `<img src="${e.target.result}" class="preview-img" alt="Preview"/>`;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    preview.innerHTML = `<div style="margin-top:12px;font-size:13px;color:var(--text2)">📄 ${file.name}</div>`;
+  }
+  document.getElementById('cedulaActions').style.display = '';
+}
+
+function uploadCedula(file) {
+  if (file) previewCedula(file);
+}
+
+async function confirmCedula() {
+  if (!_pendingFile) return;
+  const btn = document.getElementById('btnConfirmCedula');
+  btn.disabled = true; btn.textContent = 'Subiendo...';
+  try {
+    const fd = new FormData();
+    fd.append('archivo', _pendingFile);
+    const r = await fetch(`${API}/${TOKEN}/cedula`, { method: 'POST', body: fd });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.error); }
+    const res = await r.json();
+    DATA.cedula = { created_at: new Date().toISOString(), archivo_url: res.archivo_url };
+    _pendingFile = null;
+    renderCedula();
+    toast('✅ Cédula subida correctamente');
+  } catch (e) {
+    toast('❌ Error: ' + e.message);
+    btn.disabled = false; btn.textContent = '📤 Confirmar y Enviar';
+  }
+}
+
+function resetCedula() {
+  DATA.cedula = null;
+  renderCedula();
+}
+
+// ══════════════════════════════════
+// CONTRATOS
+// ══════════════════════════════════
+function renderContratos() {
+  const body = document.getElementById('contratosBody');
+  const reservas = DATA.reservas_activas || [];
+  const contratos = DATA.contratos || [];
+
+  if (!reservas.length) {
+    body.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No tenés máquinas reservadas actualmente.</div>';
+    return;
+  }
+
+  body.innerHTML = reservas.map(r => {
+    const firmado = contratos.find(c => c.maquina_id === r.maquina_id);
+    return `
+      <div class="contract-item">
+        <div class="ci-left">
+          <div class="ci-name">⚙️ ${r.maquina_nombre || 'Máquina'} ${r.maquina_codigo ? '('+r.maquina_codigo+')' : ''}</div>
+          <div class="ci-sub">Reserva ${r.codigo}</div>
+        </div>
+        ${firmado
+          ? `<span class="status status-ok">✓ Firmado ${new Date(firmado.firmado_en).toLocaleDateString('es-UY')}</span>`
+          : `<button class="btn btn-primary" style="padding:8px 16px;font-size:13px" onclick="openContrato(${r.maquina_id},'${r.maquina_nombre||'Máquina'}','${r.maquina_codigo||''}')">✍️ Firmar</button>`
+        }
+      </div>`;
+  }).join('');
+}
+
+function openContrato(maqId, maqNombre, maqCodigo) {
+  const body = document.getElementById('contratosBody');
+  body.innerHTML = `
+    <div style="margin-bottom:16px">
+      <button class="btn btn-secondary" onclick="renderContratos()" style="padding:6px 14px;font-size:12px">← Volver</button>
+    </div>
+    <h4 style="margin-bottom:12px;font-size:15px">📋 Contrato de Alquiler — ${maqNombre} ${maqCodigo ? '('+maqCodigo+')' : ''}</h4>
+    <div class="contract-box" id="contractText">
+      <h4>CONTRATO DE ALQUILER DE EQUIPOS ESTÉTICOS</h4>
+      <p><strong>DepiMóvil</strong> — Alquiler de Equipos de Estética Profesional</p>
+      <p>Entre <strong>DepiMóvil</strong> (en adelante "la Empresa") y <strong>${DATA.operadora.nombre} ${DATA.operadora.apellido}</strong> (en adelante "la Operadora"), se celebra el presente contrato de alquiler del equipo <strong>${maqNombre} ${maqCodigo ? '('+maqCodigo+')' : ''}</strong>, sujeto a las siguientes condiciones:</p>
+      
+      <p><strong>1. OBJETO:</strong> La Empresa entrega en alquiler a la Operadora el equipo identificado arriba, en perfecto estado de funcionamiento, para uso exclusivo en tratamientos estéticos profesionales.</p>
+      
+      <p><strong>2. DURACIÓN:</strong> El presente contrato tendrá vigencia mientras la reserva asociada se encuentre activa, pudiendo ser renovado de mutuo acuerdo.</p>
+      
+      <p><strong>3. OBLIGACIONES DE LA OPERADORA:</strong></p>
+      <p>a) Utilizar el equipo exclusivamente para los fines previstos y según las instrucciones de uso.<br>
+      b) Mantener el equipo en buen estado de conservación.<br>
+      c) No subalquilar, prestar ni ceder el equipo a terceros.<br>
+      d) Abonar puntualmente el canon de alquiler pactado.<br>
+      e) Comunicar de inmediato cualquier desperfecto o anomalía del equipo.<br>
+      f) Devolver el equipo en las mismas condiciones en que fue recibido, salvo el desgaste normal por uso.</p>
+      
+      <p><strong>4. OBLIGACIONES DE LA EMPRESA:</strong></p>
+      <p>a) Entregar el equipo en perfecto estado de funcionamiento.<br>
+      b) Brindar soporte técnico y capacitación inicial.<br>
+      c) Realizar mantenimiento preventivo según cronograma.</p>
+      
+      <p><strong>5. RESPONSABILIDAD:</strong> La Operadora es responsable de cualquier daño al equipo causado por mal uso, negligencia o incumplimiento de las instrucciones. En caso de robo o pérdida, la Operadora deberá abonar el valor de reposición del equipo.</p>
+      
+      <p><strong>6. RESCISIÓN:</strong> Cualquiera de las partes podrá rescindir el contrato con un preaviso mínimo de 30 días. El incumplimiento de las obligaciones dará derecho a la Empresa a rescindir sin previo aviso.</p>
+      
+      <p><em>Este contrato se firma digitalmente y tiene plena validez legal.</em></p>
+    </div>
+    
+    <div class="check-row" onclick="this.querySelector('input').checked=!this.querySelector('input').checked;checkCanSign()">
+      <input type="checkbox" id="chkLeido" onchange="checkCanSign()"/>
+      <label for="chkLeido">He leído y acepto los términos del contrato</label>
+    </div>
+    <div class="check-row" onclick="this.querySelector('input').checked=!this.querySelector('input').checked;checkCanSign()">
+      <input type="checkbox" id="chkResponsable" onchange="checkCanSign()"/>
+      <label for="chkResponsable">Acepto la responsabilidad sobre el equipo</label>
+    </div>
+    
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-primary" id="btnFirmar" disabled onclick="firmarContrato(${maqId})">
+        ✍️ Firmar Contrato Digitalmente
+      </button>
+    </div>`;
+}
+
+function checkCanSign() {
+  const a = document.getElementById('chkLeido')?.checked;
+  const b = document.getElementById('chkResponsable')?.checked;
+  const btn = document.getElementById('btnFirmar');
+  if (btn) btn.disabled = !(a && b);
+}
+
+async function firmarContrato(maqId) {
+  const btn = document.getElementById('btnFirmar');
+  btn.disabled = true; btn.textContent = 'Firmando...';
+  try {
+    const r = await fetch(`${API}/${TOKEN}/contrato/${maqId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.error); }
+    const res = await r.json();
+    DATA.contratos.push({ maquina_id: maqId, firmado_en: res.firmado_en });
+    renderContratos();
+    toast('✅ Contrato firmado correctamente');
+  } catch (e) {
+    toast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = '✍️ Firmar Contrato Digitalmente';
+  }
+}
+
+// ══════════════════════════════════
+// TOAST
+// ══════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════
+// BOOT
+// ══════════════════════════════════
+init();
+</script>
+</body>
+</html>
