@@ -6676,23 +6676,13 @@ function mostrarToast(msg, tipo='ok') {
   setTimeout(() => t.remove(), 3000);
 }
 
-;
+
+function apiHeaders() {
+  var h = {'Content-Type': 'application/json'};
   if (typeof TOKEN !== 'undefined' && TOKEN.get) {
     var t = TOKEN.get();
     if (t) h['Authorization'] = 'Bearer ' + t;
   }
-  return h;
-}
-</script>
-<script>
-function apiHeaders() {
-  var h = {'Content-Type': 'application/json'};
-  try {
-    if (typeof TOKEN !== 'undefined' && TOKEN.get) {
-      var t = TOKEN.get();
-      if (t) h['Authorization'] = 'Bearer ' + t;
-    }
-  } catch(e) {}
   return h;
 }
 </script>
