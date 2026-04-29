@@ -5805,7 +5805,7 @@ async function loadOpDocs(opId){
 
 initData();
 (async()=>{await tryRestoreSession();})();
-
+</script>
 // ============================================================
 // MÓDULO: TRANSPORTISTAS — DepiMóvil CRM
 // Pegar dentro de la función initApp() o donde están los demás módulos
@@ -6056,7 +6056,7 @@ function htmlPagoRow(p) {
 function abrirPanelRastreo(envioId) {
   const modal = document.createElement('div');
   modal.id = 'modal-rastreo';
-  modal.className = 'modal-overlay open';
+  modal.className = 'modal-overlay';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6277,7 +6277,7 @@ function abrirFormTransportista(t) {
   const deps = t?.departamentos || [];
   const modal = document.createElement('div');
   modal.id = 'modal-form-transportista';
-  modal.className = 'modal-overlay open';
+  modal.className = 'modal-overlay';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6359,33 +6359,44 @@ function abrirFormTransportista(t) {
 
 async function guardarTransportista(e, id) {
   e.preventDefault();
-  const deps = [...document.querySelectorAll("#deps-grid input:checked")].map(el => el.value);
+  const deps = [...document.querySelectorAll('#deps-grid input:checked')].map(el => el.value);
   const body = {
-    tipo: document.getElementById("f-tipo").value,
-    nombre: document.getElementById("f-nombre").value.trim(),
-    telefono: document.getElementById("f-telefono").value.trim(),
-    whatsapp: document.getElementById("f-whatsapp").value.trim(),
-    direccion: document.getElementById("f-direccion").value.trim(),
-    ciclo_pago: document.getElementById("f-ciclo").value,
-    departamentos: deps,
-    tarifa_envio_chica: parseFloat(document.getElementById("f-env-chica").value)||0,
-    tarifa_envio_grande: parseFloat(document.getElementById("f-env-grande").value)||0,
-    tarifa_limpieza_chica: parseFloat(document.getElementById("f-limp-chica").value)||0,
-    tarifa_limpieza_grande: parseFloat(document.getElementById("f-limp-grande").value)||0,
-    sin_rastreo_siempre: document.getElementById("f-sin-rastreo").checked,
-    notas: document.getElementById("f-notas").value.trim(),
+    tipo:                   document.getElementById('f-tipo').value,
+    nombre:                 document.getElementById('f-nombre').value.trim(),
+    telefono:               document.getElementById('f-telefono').value.trim(),
+    whatsapp:               document.getElementById('f-whatsapp').value.trim(),
+    direccion:              document.getElementById('f-direccion').value.trim(),
+    ciclo_pago:             document.getElementById('f-ciclo').value,
+    departamentos:          deps,
+    tarifa_envio_chica:     parseFloat(document.getElementById('f-env-chica').value)||0,
+    tarifa_envio_grande:    parseFloat(document.getElementById('f-env-grande').value)||0,
+    tarifa_limpieza_chica:  parseFloat(document.getElementById('f-limp-chica').value)||0,
+    tarifa_limpieza_grande: parseFloat(document.getElementById('f-limp-grande').value)||0,
+    sin_rastreo_siempre:    document.getElementById('f-sin-rastreo').checked,
+    notas:                  document.getElementById('f-notas').value.trim(),
   };
-  const url = id ? API+"/transportistas/"+id : API+"/transportistas";
-  const method = id ? "PUT" : "POST";
+
+  const url    = id ? `${API}/transportistas/${id}` : `${API}/transportistas`;
+  const method = id ? 'PUT' : 'POST';
+
   try {
-    const res = await fetch(url, { method, headers: apiHeaders(), body: JSON.stringify(body) });
-    document.getElementById("modal-form-transportista").remove();
-    mostrarToast(id ? "Transportista actualizado ✓" : "Transportista creado ✓");
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById('modal-form-transportista').remove();
+    mostrarToast(id ? 'Transportista actualizado ✓' : 'Transportista creado ✓');
     renderListaTransportistas();
-  } catch(err) { mostrarToast("Error: "+err.message, "error"); }
+  } catch {
+    mostrarToast('Error al guardar', 'error');
+  }
 }
 
-
+// ─────────────────────────────────────────────
+// 5. NUEVO ENVÍO
+// ─────────────────────────────────────────────
 async function abrirFormNuevoEnvio(transportistaId) {
   const resM = await fetch(`${API}/maquinas`);
   const resR = await fetch(`${API}/reservas?estado=activa`);
@@ -6395,7 +6406,7 @@ async function abrirFormNuevoEnvio(transportistaId) {
 
   const modal = document.createElement('div');
   modal.id = 'modal-form-envio';
-  modal.className = 'modal-overlay open';
+  modal.className = 'modal-overlay';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6525,7 +6536,7 @@ async function guardarEnvio(e, transportistaId) {
 function abrirFormNuevoIncidente(transportistaId) {
   const modal = document.createElement('div');
   modal.id = 'modal-incidente';
-  modal.className = 'modal-overlay open';
+  modal.className = 'modal-overlay';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6570,7 +6581,7 @@ function abrirFormLiquidacion(transportistaId) {
 
   const modal = document.createElement('div');
   modal.id = 'modal-liquidacion';
-  modal.className = 'modal-overlay open';
+  modal.className = 'modal-overlay';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6675,16 +6686,5 @@ function mostrarToast(msg, tipo='ok') {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
-
-
-function apiHeaders() {
-  var h = {'Content-Type': 'application/json'};
-  if (typeof TOKEN !== 'undefined' && TOKEN.get) {
-    var t = TOKEN.get();
-    if (t) h['Authorization'] = 'Bearer ' + t;
-  }
-  return h;
-}
-</script>
 </body>
 </html>
