@@ -5805,7 +5805,9 @@ async function loadOpDocs(opId){
 
 initData();
 (async()=>{await tryRestoreSession();})();
-</script>
+
+function apiHeaders(){var h={'Content-Type':'application/json'};try{if(typeof TOKEN!=='undefined'&&TOKEN.get){var t=TOKEN.get();if(t)h['Authorization']='Bearer '+t;}}catch(e){}return h;}
+
 // ============================================================
 // MÓDULO: TRANSPORTISTAS — DepiMóvil CRM
 // Pegar dentro de la función initApp() o donde están los demás módulos
@@ -5851,7 +5853,7 @@ async function renderListaTransportistas() {
   `;
 
   try {
-    const res = await fetch(`${API}/transportistas`);
+    const res = await fetch(`${API}/transportistas`,{headers:apiHeaders()});
     const data = await res.json();
     document.getElementById('trans-count').textContent = `${data.length} activos`;
     document.getElementById('lista-transportistas').innerHTML = data.length
@@ -5895,10 +5897,10 @@ async function abrirFichaTransportista(id) {
 
   try {
     const [tRes, enviosRes, incidentesRes, pagosRes] = await Promise.all([
-      fetch(`${API}/transportistas/${id}`),
-      fetch(`${API}/transportistas/${id}/envios`),
-      fetch(`${API}/transportistas/${id}/incidentes`),
-      fetch(`${API}/transportistas/${id}/pagos`),
+      fetch(`${API}/transportistas/${id}`,{headers:apiHeaders()}),
+      fetch(`${API}/transportistas/${id}/envios`,{headers:apiHeaders()}),
+      fetch(`${API}/transportistas/${id}/incidentes`,{headers:apiHeaders()}),
+      fetch(`${API}/transportistas/${id}/pagos`,{headers:apiHeaders()}),
     ]);
     const t       = await tRes.json();
     const envios  = await enviosRes.json();
@@ -6056,7 +6058,7 @@ function htmlPagoRow(p) {
 function abrirPanelRastreo(envioId) {
   const modal = document.createElement('div');
   modal.id = 'modal-rastreo';
-  modal.className = 'modal-overlay';
+  modal.className = 'modal-overlay open';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6267,7 +6269,7 @@ function abrirFormNuevoTransportista() {
 }
 
 async function abrirFormEditarTransportista(id) {
-  const res = await fetch(`${API}/transportistas/${id}`);
+  const res = await fetch(`${API}/transportistas/${id}`,{headers:apiHeaders()});
   const t = await res.json();
   abrirFormTransportista(t);
 }
@@ -6277,7 +6279,7 @@ function abrirFormTransportista(t) {
   const deps = t?.departamentos || [];
   const modal = document.createElement('div');
   modal.id = 'modal-form-transportista';
-  modal.className = 'modal-overlay';
+  modal.className = 'modal-overlay open';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6398,15 +6400,15 @@ async function guardarTransportista(e, id) {
 // 5. NUEVO ENVÍO
 // ─────────────────────────────────────────────
 async function abrirFormNuevoEnvio(transportistaId) {
-  const resM = await fetch(`${API}/maquinas`);
-  const resR = await fetch(`${API}/reservas?estado=activa`);
+  const resM = await fetch(`${API}/maquinas`,{headers:apiHeaders()});
+  const resR = await fetch(`${API}/reservas?estado=activa`,{headers:apiHeaders()});
   const maquinas = await resM.json();
   const reservas = await resR.json();
   const t = transportistaActual;
 
   const modal = document.createElement('div');
   modal.id = 'modal-form-envio';
-  modal.className = 'modal-overlay';
+  modal.className = 'modal-overlay open';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6536,7 +6538,7 @@ async function guardarEnvio(e, transportistaId) {
 function abrirFormNuevoIncidente(transportistaId) {
   const modal = document.createElement('div');
   modal.id = 'modal-incidente';
-  modal.className = 'modal-overlay';
+  modal.className = 'modal-overlay open';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6581,7 +6583,7 @@ function abrirFormLiquidacion(transportistaId) {
 
   const modal = document.createElement('div');
   modal.id = 'modal-liquidacion';
-  modal.className = 'modal-overlay';
+  modal.className = 'modal-overlay open';
   modal.innerHTML = `
     <div class="modal-box">
       <div class="modal-header">
@@ -6686,5 +6688,6 @@ function mostrarToast(msg, tipo='ok') {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
 }
+</script>
 </body>
 </html>
