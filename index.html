@@ -6386,12 +6386,16 @@ async function guardarTransportista(e, id) {
       headers: apiHeaders(),
       body: JSON.stringify(body)
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      const txt = await res.text().catch(()=>'');
+      throw new Error(`HTTP ${res.status}: ${txt}`);
+    }
     document.getElementById('modal-form-transportista').remove();
     mostrarToast(id ? 'Transportista actualizado ✓' : 'Transportista creado ✓');
     renderListaTransportistas();
-  } catch {
-    mostrarToast('Error al guardar', 'error');
+  } catch(err) {
+    console.error('Error guardarTransportista:', err);
+    mostrarToast('Error al guardar: ' + (err?.message || 'desconocido'), 'error');
   }
 }
 
