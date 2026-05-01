@@ -6218,7 +6218,7 @@ async function enviarRastreo(envioId) {
   try {
     await fetch(`${API}/envios/${envioId}/rastreo`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: apiHeaders(),
       body: JSON.stringify({
         numero_rastreo: num,
         rastreo_notificado: true,
@@ -6239,7 +6239,7 @@ async function guardarRastreoSinEnviar(envioId) {
     || document.getElementById('rastreo-manual')?.value?.trim() || '';
   await fetch(`${API}/envios/${envioId}/rastreo`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify({ numero_rastreo: num, rastreo_notificado: false })
   });
   cerrarModalRastreo();
@@ -6383,7 +6383,7 @@ async function guardarTransportista(e, id) {
   try {
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: apiHeaders(),
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error();
@@ -6519,7 +6519,7 @@ async function guardarEnvio(e, transportistaId) {
   try {
     const res = await fetch(`${API}/envios`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: apiHeaders(),
       body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error();
@@ -6564,7 +6564,7 @@ async function guardarIncidente(e, transportistaId) {
   };
   await fetch(`${API}/transportistas/${transportistaId}/incidentes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify(body)
   });
   document.getElementById('modal-incidente').remove();
@@ -6644,7 +6644,7 @@ async function guardarLiquidacion(e, transportistaId) {
   };
   await fetch(`${API}/transportistas/${transportistaId}/pagos`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify(body)
   });
   document.getElementById('modal-liquidacion').remove();
@@ -6655,7 +6655,7 @@ async function guardarLiquidacion(e, transportistaId) {
 async function marcarPagado(pagoId) {
   await fetch(`${API}/transportistas/pagos/${pagoId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify({ estado: 'pagado', fecha_pago: new Date().toISOString().split('T')[0] })
   });
   mostrarToast('Pago registrado ✓');
