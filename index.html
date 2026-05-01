@@ -2082,8 +2082,9 @@ function mapReserva(r){
 }
 async function loadAllData(){
   try{
-    const[ops,maqs,reservas]=await Promise.all([
-      api('/api/operadoras'),api('/api/maquinas'),api('/api/reservas')
+    const[ops,maqs,reservas,pagos,leads]=await Promise.all([
+      api('/api/operadoras'),api('/api/maquinas'),api('/api/reservas'),
+      api('/api/pagos'),api('/api/leads')
     ]);
     DB.set('operadoras',ops.map(o=>({id:o.id,nombre:o.nombre,apellido:o.apellido||'',
       gabinete:o.gabinete||'',ciudad:o.ciudad,departamento:o.departamento||'',
@@ -2095,6 +2096,19 @@ async function loadAllData(){
       categoria:m.categoria||'',ubicacion:m.ubicacion||'',estado:m.estado||'disponible',
       serial:m.serial_num||'',obs:m.obs||''})));
     DB.set('reservas',reservas.map(mapReserva));
+    DB.set('pagos',pagos.map(p=>({id:p.id,codigo:p.codigo,reservaId:p.reserva_id,
+      operadoraId:p.operadora_id,tipo:p.tipo,estado:p.estado,
+      montoTotal:parseFloat(p.monto_total)||0,moneda:p.moneda||'UYU',
+      senaRequerida:parseFloat(p.sena_requerida)||0,senaAbonada:parseFloat(p.sena_abonada)||0,
+      saldoPendiente:parseFloat(p.saldo_pendiente)||0,
+      fechaPago:p.fecha_pago,comprobante:p.comprobante||'',obs:p.obs||'',
+      creadaEn:p.created_at?.split('T')[0]||''})));
+    DB.set('leads',leads.map(l=>({id:l.id,nombre:l.nombre,apellido:'',gabinete:'',
+      ciudad:l.ciudad||'',departamento:l.departamento||'',pais:'Uruguay',
+      whatsapp:l.telefono||'',telefono:l.telefono||'',email:l.email||'',
+      fuente:l.canal||'',interes:'',tecnologia:'',estado:l.estado||'nuevo',
+      obs:l.obs||'',fechaAlta:l.created_at?l.created_at.split('T')[0]:'',
+      fechaUpdate:l.updated_at?l.updated_at.split('T')[0]:'',operadoraId:null})));
   }catch(e){
     console.error('Error cargando datos:',e);
     showToast('⚠️ Error conectando con el servidor','warn');
