@@ -5809,8 +5809,14 @@ initData();
 
 // ============================================================
 // MÓDULO: TRANSPORTISTAS — DepiMóvil CRM
-// Pegar dentro de la función initApp() o donde están los demás módulos
 // ============================================================
+
+function apiHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  const t = localStorage.getItem('dm_jwt');
+  if (t) h['Authorization'] = 'Bearer ' + t;
+  return h;
+}
 
 // ─────────────────────────────────────────────
 // CONSTANTES Y ESTADO
