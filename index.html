@@ -6401,7 +6401,7 @@ async function guardarTransportista(e, id) {
     renderListaTransportistas();
   } catch(err) {
     console.error('Error guardarTransportista:', err);
-    mostrarToast('Error al guardar: ' + (err?.message || 'desconocido'), 'error');
+    mostrarToast('Error al guardar', 'error');
   }
 }
 
