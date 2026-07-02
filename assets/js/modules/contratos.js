@@ -133,4 +133,81 @@ function updateContratosBadge(){
   badge.style.display = count ? 'inline-flex' : 'none';
 }
 
+/* WhatsApp: acciones de borrado para cola pendiente del servidor.
+   Este modulo carga al final del CRM, despues de whatsapp.js. */
+async function borrarColaServidorWA(id){
+  if(!confirm('¿Borrar este WhatsApp pendiente del servidor? No se enviará.')) return;
+  try{
+    await api('/api/webhook/whatsapp/queue/'+id, {method:'DELETE'});
+    DB.set('wa_queue_server', (DB.get('wa_queue_server')||[]).filter(q=>parseInt(q.id)!==parseInt(id)));
+    if(typeof cargarColaServidorWA === 'function') await cargarColaServidorWA();
+    if(typeof updateWABadge === 'function') updateWABadge();
+    showToast('🗑 WhatsApp pendiente borrado');
+    if(typeof renderWA === 'function') renderWA('pendientes');
+  }catch(e){
+    showToast('❌ '+e.message, 'error');
+  }
+}
+
+async function borrarPendientesWA(){
+  const notifs = DB.get('wa_notificaciones')||[];
+  const locales = notifs.filter(n=>n.estado==='pendiente');
+  const serverPend = DB.get('wa_queue_server')||[];
+  const total = locales.length + serverPend.length;
+  if(!total) return;
+  if(!confirm(`¿Borrar ${total} WhatsApp pendiente${total!==1?'s':''}? No se enviarán.`)) return;
+
+  DB.set('wa_notificaciones', notifs.filter(n=>n.estado!=='pendiente'));
+  let borradosServidor = 0;
+  if(serverPend.length){
+    try{
+      const result = await api('/api/webhook/whatsapp/queue', {method:'DELETE'});
+      borradosServidor = result.count || serverPend.length;
+      if(typeof cargarColaServidorWA === 'function') await cargarColaServidorWA();
+    }catch(e){
+      DB.set('wa_queue_server_error', e.message);
+      showToast('⚠️ Se borraron los locales, pero no la cola del servidor: '+e.message, 'warn');
+    }
+  }
+  if(typeof updateWABadge === 'function') updateWABadge();
+  showToast(`🗑 Pendientes borrados: ${locales.length + borradosServidor}`);
+  if(typeof renderWA === 'function') renderWA('pendientes');
+}
+
+(function instalarBotonesBorradoWhatsApp(){
+  if(typeof renderWA !== 'function') return;
+  const renderOriginalWA = renderWA;
+  renderWA = function(tab){
+    const result = renderOriginalWA.apply(this, arguments);
+    setTimeout(insertarBotonesBorradoWhatsApp, 0);
+    return result;
+  };
+
+  function insertarBotonesBorradoWhatsApp(){
+    if(typeof waActiveTab !== 'undefined' && waActiveTab !== 'pendientes') return;
+    const el = document.getElementById('waTabContent');
+    if(!el) return;
+    const locales = (DB.get('wa_notificaciones')||[]).filter(n=>n.estado==='pendiente').length;
+    const server = (DB.get('wa_queue_server')||[]).length;
+    const total = locales + server;
+    let bar = document.getElementById('waPendingDeleteBar');
+    if(!total){ if(bar) bar.remove(); return; }
+    if(!bar){
+      bar = document.createElement('div');
+      bar.id = 'waPendingDeleteBar';
+      bar.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px';
+      el.insertBefore(bar, el.firstChild);
+    }
+    bar.innerHTML = `<button class="action-btn danger" onclick="borrarPendientesWA()">🗑 Borrar pendientes (${total})</button>`;
+
+    el.querySelectorAll('button[onclick^="enviarColaServidorWA("]').forEach(btn=>{
+      const match = String(btn.getAttribute('onclick')||'').match(/enviarColaServidorWA\((\d+)\)/);
+      if(!match || !btn.parentElement) return;
+      const id = match[1];
+      if(btn.parentElement.querySelector(`[data-wa-delete-server="${id}"]`)) return;
+      btn.insertAdjacentHTML('afterend', `<button class="action-btn danger" data-wa-delete-server="${id}" onclick="borrarColaServidorWA(${id})">Borrar pendiente</button>`);
+    });
+  }
+})();
+
 updateContratosBadge();
