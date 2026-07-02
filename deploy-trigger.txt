@@ -1,0 +1,4 @@
+Deploy trigger
+
+Fecha: 2026-07-02
+Motivo: forzar redeploy para publicar borrado de cola WhatsApp y fixes de autenticacion.
