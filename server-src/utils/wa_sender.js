@@ -55,11 +55,19 @@ function metaConfig() {
 }
 
 function getProvider() {
-  // Meta tiene prioridad — Evolution en Hetzner es bloqueado por Meta/WhatsApp
+  const preferido = String(process.env.WA_PROVIDER || process.env.WHATSAPP_PROVIDER || '').toLowerCase();
   const { phoneId, token } = metaConfig();
-  if (phoneId && token) return 'meta';
+  const metaReady = !!(phoneId && token);
   const { url } = evoBase();
-  if (url && process.env.EVOLUTION_KEY) return 'evolution';
+  const evolutionReady = !!(url && process.env.EVOLUTION_KEY);
+
+  if (preferido === 'meta' && metaReady) return 'meta';
+  if (['evolution', 'evolution_api', 'baileys'].includes(preferido) && evolutionReady) return 'evolution';
+
+  // Mantener coherencia con /api/webhook/whatsapp/status: si Evolution esta configurado,
+  // la pantalla y el envio usan el mismo proveedor salvo que WA_PROVIDER fuerce Meta.
+  if (evolutionReady) return 'evolution';
+  if (metaReady) return 'meta';
   return 'none';
 }
 
