@@ -110,6 +110,79 @@ async function loadOpDocs(opId){
   }catch(e){if(body)body.innerHTML='<div style="font-size:12px;color:var(--text3)">No se pudieron cargar documentos.</div>';}
 }
 
+/* ==================================
+   WHATSAPP PENDIENTES (parche)
+================================== */
+async function borrarColaServidorWA(id){
+  if(!confirm('¿Borrar este WhatsApp pendiente del servidor? No se enviará.'))return;
+  try{
+    await api('/api/webhook/whatsapp/queue/'+id,{method:'DELETE'});
+    DB.set('wa_queue_server',(DB.get('wa_queue_server')||[]).filter(function(q){return parseInt(q.id)!==parseInt(id);}));
+    if(typeof cargarColaServidorWA==='function')await cargarColaServidorWA();
+    if(typeof updateWABadge==='function')updateWABadge();
+    showToast('🗑 WhatsApp pendiente borrado');
+    if(typeof renderWA==='function')renderWA('pendientes');
+  }catch(e){
+    showToast('❌ '+e.message,'error');
+  }
+}
+async function borrarPendientesWA(){
+  var notifs=DB.get('wa_notificaciones')||[];
+  var locales=notifs.filter(function(n){return n.estado==='pendiente';});
+  var serverPend=DB.get('wa_queue_server')||[];
+  var total=locales.length+serverPend.length;
+  if(!total)return;
+  if(!confirm('¿Borrar '+total+' WhatsApp pendiente'+(total!==1?'s':'')+'? No se enviarán.'))return;
+  DB.set('wa_notificaciones',notifs.filter(function(n){return n.estado!=='pendiente';}));
+  var borradosServidor=0;
+  if(serverPend.length){
+    try{
+      var result=await api('/api/webhook/whatsapp/queue',{method:'DELETE'});
+      borradosServidor=result.count||serverPend.length;
+      if(typeof cargarColaServidorWA==='function')await cargarColaServidorWA();
+    }catch(e){
+      DB.set('wa_queue_server_error',e.message);
+      showToast('⚠️ Se borraron los locales, pero no la cola del servidor: '+e.message,'warn');
+    }
+  }
+  if(typeof updateWABadge==='function')updateWABadge();
+  showToast('🗑 Pendientes borrados: '+(locales.length+borradosServidor));
+  if(typeof renderWA==='function')renderWA('pendientes');
+}
+(function mejorarAccionesWhatsappPendientes(){
+  if(typeof renderWA!=='function')return;
+  var renderWAOriginal=renderWA;
+  renderWA=function(tab){
+    var result=renderWAOriginal.apply(this,arguments);
+    setTimeout(inyectarAccionesPendientesWA,0);
+    return result;
+  };
+  function inyectarAccionesPendientesWA(){
+    if(typeof waActiveTab!=='undefined'&&waActiveTab!=='pendientes')return;
+    var el=document.getElementById('waTabContent');
+    if(!el)return;
+    var locales=(DB.get('wa_notificaciones')||[]).filter(function(n){return n.estado==='pendiente';}).length;
+    var server=(DB.get('wa_queue_server')||[]).length;
+    var total=locales+server;
+    var bulk=document.getElementById('waPendingBulkActions');
+    if(!total){if(bulk)bulk.remove();return;}
+    if(!bulk){
+      bulk=document.createElement('div');
+      bulk.id='waPendingBulkActions';
+      bulk.style.cssText='display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px';
+      el.insertBefore(bulk,el.firstChild);
+    }
+    bulk.innerHTML='<button class="action-btn danger" onclick="borrarPendientesWA()">🗑 Borrar pendientes ('+total+')</button>';
+    el.querySelectorAll('button[onclick^="enviarColaServidorWA("]').forEach(function(btn){
+      var match=String(btn.getAttribute('onclick')||'').match(/enviarColaServidorWA\((\d+)\)/);
+      if(!match||!btn.parentElement)return;
+      var id=match[1];
+      if(btn.parentElement.querySelector('[data-wa-delete-server="'+id+'"]'))return;
+      btn.insertAdjacentHTML('afterend','<button class="action-btn danger" data-wa-delete-server="'+id+'" onclick="borrarColaServidorWA('+id+')">Borrar pendiente</button>');
+    });
+  }
+})();
+
 initData();
 (async()=>{
   await tryRestoreSession();
