@@ -19,6 +19,20 @@ async function ensureAuthTables() {
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_sesiones_whatsapp_lookup ON sesiones_whatsapp (whatsapp, rol_solicitado, used_at, expires_at DESC)');
   await pool.query('CREATE INDEX IF NOT EXISTS idx_sesiones_whatsapp_recent ON sesiones_whatsapp (whatsapp, created_at DESC) WHERE used_at IS NULL');
+
+  const cleanup = await pool.query(`
+    DELETE FROM wa_queue
+    WHERE enviado = false
+      AND tipo IN ('codigo_login', 'codigo_login_operadora')
+      AND creado_en < NOW() - INTERVAL '10 minutes'
+  `).catch(err => {
+    console.warn('No se pudo limpiar cola WhatsApp vencida:', err.message);
+    return { rowCount: 0 };
+  });
+
+  if (cleanup.rowCount) {
+    console.log(`[auth] Codigos WhatsApp vencidos limpiados de cola: ${cleanup.rowCount}`);
+  }
 }
 
 module.exports = ensureAuthTables;
