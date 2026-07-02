@@ -71,6 +71,7 @@ app.use('/api/finanzas', require('./routes/finanzas'));
 app.use('/api/leads', require('./routes/leads'));
 app.use('/api/envios', require('./routes/envios'));
 app.use('/api/transportistas', require('./routes/transportistas'));
+app.use('/api/webhook/whatsapp', require('./routes/wa_queue_admin'));
 app.use('/api/webhook/whatsapp', require('./routes/whatsapp'));
 app.use('/api/contratos', require('./routes/contratos'));
 app.use('/api/permisos', require('./routes/permisos'));
