@@ -11,10 +11,15 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const ensureAuthTables = require('./utils/ensure_auth_tables');
 
 const app = express();
 app.set('trust proxy', 1); // Trust Nginx proxy
 const PORT = process.env.PORT || 3004;
+
+ensureAuthTables().catch(err => {
+  console.error('Error preparando tablas de autenticación:', err.message);
+});
 
 // ══════════════════════════════════
 // SEGURIDAD
