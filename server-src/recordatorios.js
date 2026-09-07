@@ -479,6 +479,78 @@ async function procesarResumenDiarioOperativo() {
   );
 }
 
+async function procesarResumenSemanalLeads() {
+  const yaEnviado = await pool.query(`
+    SELECT id
+    FROM audit_log
+    WHERE accion = 'RESUMEN_SEMANAL_LEADS'
+      AND entidad = 'leads'
+      AND created_at::date = CURRENT_DATE
+    LIMIT 1
+  `);
+  if (yaEnviado.rows.length) return;
+
+  const [
+    nuevos,
+    ganados,
+    perdidos,
+    porCanal,
+    seguimientoVencido,
+  ] = await Promise.all([
+    pool.query(`
+      SELECT COUNT(*)::int AS total
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+    `),
+    pool.query(`
+      SELECT COUNT(*)::int AS total
+      FROM leads_estado_historial
+      WHERE estado_nuevo = 'ganado'
+        AND created_at >= NOW() - INTERVAL '7 days'
+    `),
+    pool.query(`
+      SELECT COUNT(*)::int AS total
+      FROM leads_estado_historial
+      WHERE estado_nuevo = 'perdido'
+        AND created_at >= NOW() - INTERVAL '7 days'
+    `),
+    pool.query(`
+      SELECT COALESCE(canal, 'otro') AS canal, COUNT(*)::int AS total
+      FROM leads
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY COALESCE(canal, 'otro')
+      ORDER BY total DESC
+    `),
+    pool.query(`
+      SELECT COUNT(*)::int AS total
+      FROM leads
+      WHERE estado NOT IN ('ganado','perdido')
+        AND prox_fecha IS NOT NULL
+        AND prox_fecha < CURRENT_DATE
+    `),
+  ]);
+
+  const v = r => r.rows[0]?.total || 0;
+  const canalLines = porCanal.rows.length
+    ? porCanal.rows.map(r => `  • ${r.canal}: *${r.total}*`).join('\n')
+    : '  • Sin datos esta semana';
+
+  const mensaje =
+    `📊 *Resumen semanal de leads — DepiMóvil*\n\n` +
+    `Leads nuevos (últimos 7 días): *${v(nuevos)}*\n` +
+    `Ganados: *${v(ganados)}* — Perdidos: *${v(perdidos)}*\n\n` +
+    `Por canal:\n${canalLines}\n\n` +
+    `Seguimientos vencidos: *${v(seguimientoVencido)}*\n\n` +
+    `Entrá al CRM para revisar el embudo comercial.`;
+
+  await notificarAdminsSistema({ tipo: 'resumen_semanal_leads', mensaje });
+  await pool.query(
+    `INSERT INTO audit_log (accion, entidad, entidad_id, detalle)
+     VALUES ('RESUMEN_SEMANAL_LEADS', 'leads', NULL, $1)`,
+    [`Resumen semanal enviado: nuevos ${v(nuevos)}, ganados ${v(ganados)}, perdidos ${v(perdidos)}`]
+  );
+}
+
 // ══════════════════════════════════════════════
 // CRON JOB
 // ══════════════════════════════════════════════
@@ -490,12 +562,22 @@ async function procesarResumenDiarioOperativo() {
 function iniciarRecordatorios() {
   console.log('⏰ Recordatorios WhatsApp: scheduler iniciado (cada 5 min)');
   console.log('📋 Resumen diario operativo: scheduler iniciado (08:00 America/Montevideo)');
+  console.log('📊 Resumen semanal de leads: scheduler iniciado (viernes 08:00 America/Montevideo)');
 
   cron.schedule('0 8 * * *', async () => {
     try {
       await procesarResumenDiarioOperativo();
     } catch (err) {
       console.error('❌ Error en resumen diario operativo:', err.message);
+    }
+  }, { timezone: 'America/Montevideo' });
+
+  // Viernes 08:00 — resumen semanal de leads (5 = viernes en cron day-of-week)
+  cron.schedule('0 8 * * 5', async () => {
+    try {
+      await procesarResumenSemanalLeads();
+    } catch (err) {
+      console.error('❌ Error en resumen semanal de leads:', err.message);
     }
   }, { timezone: 'America/Montevideo' });
 
